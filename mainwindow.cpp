@@ -100,8 +100,10 @@ void MainWindow::initActions()
     connect(ui->actionDisconnect, &QAction::triggered,this, &MainWindow::onConnectButtonClicked);
 
     connect(ui->readDPS, &QPushButton::clicked, this, &MainWindow::onReadDPS);
-    connect(ui->pb2V, &QPushButton::clicked, this, &MainWindow::onpb2V);
-    connect(ui->pb3V, &QPushButton::clicked, this, &MainWindow::onpb3V);
+    connect(ui->pb1V, &QPushButton::clicked, this, &MainWindow::onpb1V);
+    connect(ui->pb5V, &QPushButton::clicked, this, &MainWindow::onpb5V);
+    connect(ui->pb12V, &QPushButton::clicked, this, &MainWindow::onpb12V);
+    connect(ui->pb138V, &QPushButton::clicked, this, &MainWindow::onpb13_8V);
 
 
     connect(ui->actionExit, &QAction::triggered, this, &QMainWindow::close);
@@ -208,12 +210,23 @@ void MainWindow::onModbusStateChanged(int state)
         ui->connectButton->setText(tr("Disconnect"));
 }
 
-void MainWindow::onpb3V()
+void MainWindow::onpb5V()
 {
-    onSetUint(0,1300);
+    onSetUint(0,500);
 }
 
-void MainWindow::onpb2V()
+void MainWindow::onpb12V()
+{
+    onSetUint(0,1200);
+}
+
+void MainWindow::onpb13_8V()
+{
+    onSetUint(0,1380);
+}
+
+
+void MainWindow::onpb1V()
 {
     onSetUint(0,100);
   //  onSetUint(9,1);  // ON

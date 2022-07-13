@@ -98,8 +98,10 @@ private slots:
     void onReadReady();
 
     void onReadDps();
-    void onpb3V();
-    void onpb2V();
+    void onpb13_8V();
+    void onpb12V();
+    void onpb5V();
+    void onpb1V();
 
     void updateData();
 

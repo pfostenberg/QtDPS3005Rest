@@ -5,7 +5,7 @@ qtConfig(modbus-serialport): QT += serialport
 
 QT += core
 
-TARGET = modbusmaster
+TARGET = QtDPS3005Rest
 TEMPLATE = app
 CONFIG += c++11
 

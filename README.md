@@ -13,5 +13,7 @@ to control the power supply via a REST interface without any security.
 REST API
 ========
 
-Read Voltage
-Set Voltage ( waits for voltage is reached!) 
+- http://127.0.0.1:5053/
+- set Voltage http://127.0.0.1:5053/v1/set?V=5.0
+  the rest call waits till voltage is read back.
+- set Current http://127.0.0.1:5053/v1/set?I=1.0

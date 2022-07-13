@@ -30,3 +30,4 @@
 *.exe
 *.out
 *.app
+/QtDPS3005Rest.pro.user

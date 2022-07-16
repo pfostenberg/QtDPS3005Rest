@@ -56,6 +56,7 @@ void RestDpsListener::http_get_v1STAR(RESTRequest * request)
            {
                qDebug() << "timeout after sec: " << cnt;
                done = true;
+               msg = "timeout after 10 sec voltate not reached! " + v;
            }
            if (abs(delta) < 0.2)
            {

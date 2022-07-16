@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>524</width>
-    <height>251</height>
+    <width>260</width>
+    <height>264</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -198,31 +198,45 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="readDPS">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>readDPS</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="pb1V">
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>1V</string>
         </property>
+        <property name="iconSize">
+         <size>
+          <width>5</width>
+          <height>20</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pb5V">
+       <widget class="QPushButton" name="pb8V">
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
-         <string>5V</string>
+         <string>8V</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pb12V">
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>12V</string>
         </property>
@@ -230,6 +244,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="pb138V">
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>13.8V</string>
         </property>
@@ -245,7 +265,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>524</width>
+     <width>260</width>
      <height>26</height>
     </rect>
    </property>

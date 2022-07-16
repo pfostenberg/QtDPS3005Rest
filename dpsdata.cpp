@@ -39,7 +39,7 @@ void DpsData::setValue(int no,int data)
     case 1:   iset_rw=f/1000.0;break;  // DP=3
     case 2:   uout_r=f/100.0;break;  // DP=2
     case 3:   iout_r=f/1000.0;break;  // DP=3
-    case 4:   power_r=f/10.0;break;  // DP=1
+    case 4:   power_r=f/100.0;break;  // DP=1
     case 5:   uin_r=f/100.0;break;  // DP=2
     case 6:   lock_rw=data;break;
     case 7:   protect_r=data;break;
@@ -68,18 +68,26 @@ float DpsData::getVO()
 }
 
 
-
+/**
+ * @brief DpsData::getValue
+ * @param no
+ * @return  formated string e.g. 15.1 V or 1.2V
+ */
 QString DpsData::getValue(int no)
 {
     QString ret;
+    char buffer[32];
+    buffer[0]=0; // terminate
+
     switch(no)
     {
-    case 0:   ret = QString::number(uset_rw, 'g', 2);break;
-    case 1:   ret = QString::number(iset_rw, 'g', 2);break;
-    case 2:   ret = QString::number(uout_r, 'g', 2);break;
-    case 3:   ret = QString::number(iout_r, 'g', 2);break;
-    case 4:   ret = QString::number(power_r, 'g', 2);break;
-    case 5:   ret = QString::number(uin_r, 'g', 2);break;
+    //case 0:   ret = QString::number(uset_rw, 'g', 3);break; // does not work proper
+    case 0:   sprintf(buffer, "%.1f",uset_rw);break;
+    case 1:   sprintf(buffer, "%.2f",iset_rw);break;
+    case 2:   sprintf(buffer, "%.1f",uout_r);break;
+    case 3:   sprintf(buffer, "%.2f",iout_r);break;
+    case 4:   sprintf(buffer, "%.1f",power_r);break;
+    case 5:   sprintf(buffer, "%.1f",uin_r);break;
     //case 6:   lock_rw=data;break;
     //case 7:   protect_r=data;break;
     //case 8:   cvcc_r=data;break;
@@ -93,5 +101,6 @@ QString DpsData::getValue(int no)
         qDebug() << "getValue unknonw no: " << no;
 
     }
+    ret = buffer;
     return ret;
 }

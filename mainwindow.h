@@ -80,7 +80,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void onSetUint(int no, int data);
+   void onSetUint(int no, int data);
+   void onSetIint(int no, int data);
   float getActVoltage();
 private:
     void initActions();
@@ -100,13 +101,9 @@ private slots:
     void onReadDps();
     void onpb13_8V();
     void onpb12V();
-    void onpb5V();
+    void onpb8V();
     void onpb1V();
-
     void updateData();
-
-
-
     void initRs232Modbus();
 
 
@@ -116,12 +113,12 @@ private:
     QModbusClient *modbusDevice = nullptr;
     SettingsDialog *m_settingsDialog = nullptr;
 
-
     int serverEdit;
 
     DpsData dpsData;
-    QSettings *m_Settings;
+    QSettings *m_Settings;   // PORT is save and if started and port is the is auto connected.
     QTimer *m_Timer;
+    int    m_ConnectedState;
 };
 
 #endif // MAINWINDOW_H

@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_Timer=nullptr;
     m_Settings = new QSettings("klosterallee.de","DPS3005");
     serverEdit = 1;
+    m_ConnectedState = 0;
     ui->setupUi(this);
 
     m_settingsDialog = new SettingsDialog(this);
@@ -99,9 +100,9 @@ void MainWindow::initActions()
     connect(ui->actionConnect, &QAction::triggered, this, &MainWindow::onConnectButtonClicked);
     connect(ui->actionDisconnect, &QAction::triggered,this, &MainWindow::onConnectButtonClicked);
 
-    connect(ui->readDPS, &QPushButton::clicked, this, &MainWindow::onReadDPS);
+    //connect(ui->readDPS, &QPushButton::clicked, this, &MainWindow::onReadDPS);
     connect(ui->pb1V, &QPushButton::clicked, this, &MainWindow::onpb1V);
-    connect(ui->pb5V, &QPushButton::clicked, this, &MainWindow::onpb5V);
+    connect(ui->pb8V, &QPushButton::clicked, this, &MainWindow::onpb8V);
     connect(ui->pb12V, &QPushButton::clicked, this, &MainWindow::onpb12V);
     connect(ui->pb138V, &QPushButton::clicked, this, &MainWindow::onpb13_8V);
 
@@ -121,9 +122,7 @@ void MainWindow::initActions()
         // start timer.
         onConnectButtonClicked();
 
-        m_Timer = new QTimer(this);
-        connect(m_Timer, &QTimer::timeout, this, &MainWindow::onSecond);
-        m_Timer->start(1000);
+
 
 
     }
@@ -164,6 +163,7 @@ void MainWindow::onConnectButtonClicked()
     if (!modbusDevice)
         return;
 
+    m_ConnectedState = 0;
     statusBar()->clearMessage();
     if (modbusDevice->state() != QModbusDevice::ConnectedState)
     {
@@ -171,7 +171,7 @@ void MainWindow::onConnectButtonClicked()
         if (!ap.isEmpty())
         {
             m_Settings->setValue("PORT", ap);
-            qDebug() << "write PORT on open:" << ap;
+            qDebug() << "write PORT for auto open on next start: " << ap;
         }
 
         // connect.
@@ -188,6 +188,10 @@ void MainWindow::onConnectButtonClicked()
             ui->actionConnect->setEnabled(false);
             ui->actionDisconnect->setEnabled(true);
         }
+
+        m_Timer = new QTimer(this);
+        connect(m_Timer, &QTimer::timeout, this, &MainWindow::onSecond);
+        m_Timer->start(1000);
     } else {
         m_Timer->stop();
         delete m_Timer;
@@ -210,9 +214,9 @@ void MainWindow::onModbusStateChanged(int state)
         ui->connectButton->setText(tr("Disconnect"));
 }
 
-void MainWindow::onpb5V()
+void MainWindow::onpb8V()
 {
-    onSetUint(0,500);
+    onSetUint(0,800);
 }
 
 void MainWindow::onpb12V()
@@ -228,8 +232,8 @@ void MainWindow::onpb13_8V()
 
 void MainWindow::onpb1V()
 {
-    onSetUint(0,100);
-  //  onSetUint(9,1);  // ON
+    onSetUint(0,100);  // 0 -> VOUT
+
 
 }
 
@@ -359,6 +363,16 @@ void MainWindow::onSecond()
    if (modbusDevice->state() == QModbusDevice::ConnectedState)
    {
        //qDebug() << "MainWindow::OnSecond connected";
+       if (m_ConnectedState==0)
+       {
+           m_ConnectedState = 1;
+           onSetUint(1,1000);  // 0 -> IMAX limit to 1A
+           onSetUint(9,1);  // ON
+           statusBar()->showMessage("1A and ON");
+       }
+
+
+
        onReadDPS();
        return;
    }
@@ -367,7 +381,6 @@ void MainWindow::onSecond()
    //m_Timer->stop();
 
 }
-
 
 float MainWindow::getActVoltage()
 {
@@ -385,7 +398,8 @@ void MainWindow::updateData()
     QString IO = dpsData.getValue(3);
 
     ui->lcdVI->setDigitCount(4);
-    ui->lcdVI->display(VI);
+
+    ui->lcdVI->display(VI );
     ui->lcdVI->setStyleSheet("background: black; color: #008080");
 
     ui->lcdV->setDigitCount(4);
@@ -395,9 +409,4 @@ void MainWindow::updateData()
     ui->lcdIO->setDigitCount(4);
     ui->lcdIO->display(IO);
     ui->lcdIO->setStyleSheet("background: black; color: yellow");
-
-   // ui->lcdV->display(423);
-   // ui->l_VI->setText(vi);
-
 }
-

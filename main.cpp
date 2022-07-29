@@ -16,11 +16,7 @@ int main(int argc, char *argv[])
 
     MainWindow w;
 
-    // Rest GET examples:
-    // http://127.0.0.1:5053/
-    // http://127.0.0.1:5053/v1/set?V=12.0   -> got Voltage: 12.0
-    // http://127.0.0.1:5053/v1/set?I=1.0
-    //
+    // Rest GET examples: call // http://127.0.0.1:5053/ or see void RestDpsListener::http_get
     RESTServer server;
     server.addRequestListener( new RestDpsListener(&w) );
     server.listen( 5053 );  // HEX of PS

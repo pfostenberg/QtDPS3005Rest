@@ -19,6 +19,7 @@ public slots:
   void http_get_v1STAR(RESTRequest * request);
 
 private:
+  QString getValesAsJson(void);
   MainWindow *m_ModBus;
 };
 

@@ -239,7 +239,7 @@ void MainWindow::onpb1V()
 
 void MainWindow::onSetUint(int no, int data)
 {
-    qDebug() << "onSetUint " << no << " data: " << data;
+    qDebug() << "onSetUint " << no << " data: " << data;  // we can only set 1V abobe VIN!!! TODO there is no messagte
     if (!modbusDevice)
         return;
 
@@ -380,6 +380,27 @@ void MainWindow::onSecond()
 
    //m_Timer->stop();
 
+}
+
+QString MainWindow::getValuesAsJson()
+{    
+    QString ret="{\n";
+
+    QString  iset = dpsData.getValue(1);
+    QString  vout = dpsData.getValue(2);
+    QString  iout = dpsData.getValue(3);
+    QString  pow  = dpsData.getValue(4);
+    QString  vin  = dpsData.getValue(5);
+
+    ret+= "\"vout\": \"" + vout + "\", ";
+    ret+= "\"vin\":  \"" + vin  + "\", ";
+    ret+= "\"iout\": \"" + iout + "\", ";
+    ret+= "\"iset\": \"" + iset + "\", ";
+    ret+= "\"pow\":  \"" + pow  + "\", ";
+    ret+= "\"ver\":  \"0.3\"\n\r";   // VERSION-TAG  float !!! only first 2 levels!
+    ret += "}\n\r";
+
+    return ret;
 }
 
 float MainWindow::getActVoltage()

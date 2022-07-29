@@ -83,6 +83,7 @@ public:
    void onSetUint(int no, int data);
    void onSetIint(int no, int data);
   float getActVoltage();
+  QString getValuesAsJson();
 private:
     void initActions();
 

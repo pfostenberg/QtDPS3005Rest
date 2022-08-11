@@ -4,7 +4,6 @@
 #include <QThread>
 #include <QCoreApplication>
 
-
 RestDpsListener::RestDpsListener(MainWindow *mw, QObject *parent) : RESTRequestListener("/", parent)
 {
     m_ModBus = mw;
@@ -14,7 +13,7 @@ void RestDpsListener::http_get_(RESTRequest * request)
 {
     // default handler... all unknonw stuff -> show manual ( not html!!)
   qDebug() << "http_get_" << request->params();
-  QString msg = "QtDPS3005Rest Interface: Version 0.3.0";  // VERSION-TAG also in the ui headline!!
+  QString msg = "QtDPS3005Rest Interface: Version 0.4.0";  // VERSION-TAG also in the ui headline!!
   msg+="\nhttp://127.0.0.1:5053/v1/set?V=12.0   to set Voltaget o: 12.0";
   msg+="\nhttp://127.0.0.1:5053/v1/set?I=1.0";
   msg+="\nhttp://127.0.0.1:5053/v1/get";

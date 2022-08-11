@@ -1,68 +1,10 @@
-/****************************************************************************
-**
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the examples of the QtSerialBus module.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of The Qt Company Ltd nor the names of its
-**     contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "settingsdialog.h"
-
-
-#include <QModbusTcpClient>
-#include <QModbusRtuSerialMaster>
 #include <QStandardItemModel>
 #include <QStatusBar>
 #include <QUrl>
-
-
 #include <qdebug.h>
-
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -73,19 +15,18 @@ MainWindow::MainWindow(QWidget *parent)
     serverEdit = 1;
     m_ConnectedState = 0;
     ui->setupUi(this);
-
-    m_settingsDialog = new SettingsDialog(this);
-
-    initRs232Modbus();
+    initRs232Modbus();  // auto connect on start
     initActions();
 }
 
 MainWindow::~MainWindow()
 {
-    if (modbusDevice)
-        modbusDevice->disconnectDevice();
-    delete modbusDevice;
-
+    if( modbusDevice )
+    {
+        modbus_close( modbusDevice );
+        modbus_free( modbusDevice );
+        modbusDevice = NULL;
+    }
     delete ui;
 }
 
@@ -106,10 +47,7 @@ void MainWindow::initActions()
     connect(ui->pb12V, &QPushButton::clicked, this, &MainWindow::onpb12V);
     connect(ui->pb138V, &QPushButton::clicked, this, &MainWindow::onpb13_8V);
 
-
     connect(ui->actionExit, &QAction::triggered, this, &QMainWindow::close);
-    connect(ui->actionOptions, &QAction::triggered, m_settingsDialog, &QDialog::show);
-
 
     QString port = m_Settings->value("PORT").toString();
     if (!port.isEmpty())
@@ -121,97 +59,72 @@ void MainWindow::initActions()
         // connect...
         // start timer.
         onConnectButtonClicked();
-
-
-
-
     }
-
 }
 
-void MainWindow::initRs232Modbus()
+void MainWindow::pollForDataOnBus( void )
 {
+    if( modbusDevice )
+    {
+        modbus_poll( modbusDevice );
+    }
+}
+
+bool MainWindow::initRs232Modbus()
+{
+    qDebug() << "initRs232Modbus";
+
     if (modbusDevice) {
-        modbusDevice->disconnectDevice();
-        delete modbusDevice;
+        modbus_close( modbusDevice );
+        modbus_free( modbusDevice );
         modbusDevice = nullptr;
     }
 
+    modbusAdr = 1; // we use address 1
+    QString port = m_Settings->value("PORT").toString();
+    modbusDevice = modbus_new_rtu( port.toLatin1().constData(), 9600, 'N', 8, 1 );
 
-    modbusDevice = new QModbusRtuSerialMaster(this);
-
-
-    connect(modbusDevice, &QModbusClient::errorOccurred, [this](QModbusDevice::Error)
+    if( modbus_connect( modbusDevice ) == -1 )
     {
-        statusBar()->showMessage(modbusDevice->errorString(), 5000);
+        qDebug() << "Could not connect serial port!" << port ;
+        //emit connectionError( tr( "Could not connect serial port!" ) );
+
+        modbus_close( modbusDevice );
+        modbus_free( modbusDevice );
+        modbusDevice = nullptr;
+        return false;
     }
-    );
+    qDebug() << "initRs232Modbus ok " << port;
 
-    if (!modbusDevice) {
-        ui->connectButton->setDisabled(true);
+    QTimer * t = new QTimer( this );
+    connect( t, SIGNAL(timeout()), this, SLOT(pollForDataOnBus()));
+    t->start( 5 );
 
-            statusBar()->showMessage(tr("Could not create Modbus master."), 5000);
-
-    } else {
-        connect(modbusDevice, &QModbusClient::stateChanged,
-                this, &MainWindow::onModbusStateChanged);
-    }
+    return true;
 }
 
 void MainWindow::onConnectButtonClicked()
 {
-    if (!modbusDevice)
-        return;
+    qDebug() << "onConnectButtonClicked";
 
     m_ConnectedState = 0;
     statusBar()->clearMessage();
-    if (modbusDevice->state() != QModbusDevice::ConnectedState)
+
+    QString ap = ui->portEdit->text();
+    if (!ap.isEmpty())
     {
-        QString ap = ui->portEdit->text();
-        if (!ap.isEmpty())
-        {
-            m_Settings->setValue("PORT", ap);
-            qDebug() << "write PORT for auto open on next start: " << ap;
-        }
+        m_Settings->setValue("PORT", ap);
+        qDebug() << "write PORT for auto open on next start: " << ap;
+    }
 
-        // connect.
-        modbusDevice->setConnectionParameter(QModbusDevice::SerialPortNameParameter, ui->portEdit->text());
-        modbusDevice->setConnectionParameter(QModbusDevice::SerialParityParameter, m_settingsDialog->settings().parity);
-        modbusDevice->setConnectionParameter(QModbusDevice::SerialBaudRateParameter,  m_settingsDialog->settings().baud);
-        modbusDevice->setConnectionParameter(QModbusDevice::SerialDataBitsParameter,m_settingsDialog->settings().dataBits);
-        modbusDevice->setConnectionParameter(QModbusDevice::SerialStopBitsParameter, m_settingsDialog->settings().stopBits);
-        modbusDevice->setTimeout(m_settingsDialog->settings().responseTime);
-        modbusDevice->setNumberOfRetries(m_settingsDialog->settings().numberOfRetries);
-        if (!modbusDevice->connectDevice()) {
-            statusBar()->showMessage(tr("Connect failed: ") + modbusDevice->errorString(), 5000);
-        } else {
-            ui->actionConnect->setEnabled(false);
-            ui->actionDisconnect->setEnabled(true);
-        }
-
+    bool connected = initRs232Modbus();  // connect on click
+    if (connected)
+    {
         m_Timer = new QTimer(this);
         connect(m_Timer, &QTimer::timeout, this, &MainWindow::onSecond);
         m_Timer->start(1000);
-    } else {
-        m_Timer->stop();
-        delete m_Timer;
-        m_Timer=nullptr;
-        modbusDevice->disconnectDevice();
-        ui->actionConnect->setEnabled(true);
-        ui->actionDisconnect->setEnabled(false);
+
     }
-}
-
-void MainWindow::onModbusStateChanged(int state)
-{
-    bool connected = (state != QModbusDevice::UnconnectedState);
-    ui->actionConnect->setEnabled(!connected);
-    ui->actionDisconnect->setEnabled(connected);
-
-    if (state == QModbusDevice::UnconnectedState)
-        ui->connectButton->setText(tr("Connect"));
-    else if (state == QModbusDevice::ConnectedState)
-        ui->connectButton->setText(tr("Disconnect"));
 }
 
 void MainWindow::onpb8V()
@@ -229,12 +142,9 @@ void MainWindow::onpb13_8V()
     onSetUint(0,1380);
 }
 
-
 void MainWindow::onpb1V()
 {
     onSetUint(0,100);  // 0 -> VOUT
-
-
 }
 
 void MainWindow::onSetUint(int no, int data)
@@ -243,36 +153,10 @@ void MainWindow::onSetUint(int no, int data)
     if (!modbusDevice)
         return;
 
-    const auto table = QModbusDataUnit::RegisterType::HoldingRegisters;
+   modbus_set_slave( modbusDevice, 1 );
 
-    quint16 numberOfEntries = 1;
-    QModbusDataUnit writeUnit(table, no, numberOfEntries);
-
-    quint16 xx= data;
-    qDebug() << " add: " << no << " data: " << xx;
-    writeUnit.setValue(0, xx);
-
-    if (auto *reply = modbusDevice->sendWriteRequest(writeUnit, serverEdit)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, [this, reply]() {
-                if (reply->error() == QModbusDevice::ProtocolError) {
-                    statusBar()->showMessage(tr("Write response error: %1 (Mobus exception: 0x%2)")
-                        .arg(reply->errorString()).arg(reply->rawResult().exceptionCode(), -1, 16),
-                        5000);
-                } else if (reply->error() != QModbusDevice::NoError) {
-                    statusBar()->showMessage(tr("Write response error: %1 (code: 0x%2)").
-                        arg(reply->errorString()).arg(reply->error(), -1, 16), 5000);
-                }
-                reply->deleteLater();
-            });
-        } else {
-            // broadcast replies return immediately
-            reply->deleteLater();
-        }
-    } else {
-        statusBar()->showMessage(tr("Write error: ") + modbusDevice->errorString(), 5000);
-    }
-
+   int  ret = modbus_write_register( modbusDevice, no,data);
+   qDebug() << "modbus_write_register: " << ret;
 }
 
 void MainWindow::onReadDPS()
@@ -282,87 +166,28 @@ void MainWindow::onReadDPS()
 
     statusBar()->clearMessage();
 
-    const auto table =QModbusDataUnit::RegisterType::HoldingRegisters;
+    modbus_set_slave( modbusDevice, 1 );
 
-    if (auto *reply = modbusDevice->sendReadRequest(QModbusDataUnit(table, 0, 12), serverEdit)) {
-        if (!reply->isFinished())
-            connect(reply, &QModbusReply::finished, this, &MainWindow::onReadDps);
-        else
-            delete reply; // broadcast replies return immediately
-    } else {
-        statusBar()->showMessage(tr("Read error: ") + modbusDevice->errorString(), 5000);
-    }
-}
+    int ret = modbus_read_registers( modbusDevice, modbusAdr, 12, modbusData );
 
+    qDebug() << "modbus_read_registers: " << ret;
 
-void MainWindow::onReadDps()
-{
-    auto reply = qobject_cast<QModbusReply *>(sender());
-    if (!reply)
-        return;
-
-    if (reply->error() == QModbusDevice::NoError) {
-        const QModbusDataUnit unit = reply->result();
-        for (int i = 0, total = int(unit.valueCount()); i < total; ++i)
+    if (ret == 12)
+    {
+        for (int i = 0; i < ret; i++)
         {
-            int no = unit.startAddress() + i;
-            int data = unit.value(i);
-            const QString entry = tr("Address: %1, Value: %2").arg(no)
-                                     .arg(QString::number(data,
-                                          unit.registerType() <= QModbusDataUnit::Coils ? 10 : 16));
-
-            dpsData.setValue(no,data);
+            int data = modbusData[i];
+            qDebug() << i << "modbus_read_registers 0: " << data;
+            dpsData.setValue(i+1,data);
         }
-
         updateData();
-
-
-    } else if (reply->error() == QModbusDevice::ProtocolError) {
-        statusBar()->showMessage(tr("Read response error: %1 (Mobus exception: 0x%2)").
-                                    arg(reply->errorString()).
-                                    arg(reply->rawResult().exceptionCode(), -1, 16), 5000);
-    } else {
-        statusBar()->showMessage(tr("Read response error: %1 (code: 0x%2)").
-                                    arg(reply->errorString()).
-                                    arg(reply->error(), -1, 16), 5000);
     }
-
-    reply->deleteLater();
 }
-
-void MainWindow::onReadReady()
-{
-    auto reply = qobject_cast<QModbusReply *>(sender());
-    if (!reply)
-        return;
-
-    if (reply->error() == QModbusDevice::NoError) {
-        const QModbusDataUnit unit = reply->result();
-        for (int i = 0, total = int(unit.valueCount()); i < total; ++i) {
-            const QString entry = tr("Address: %1, Value: %2").arg(unit.startAddress() + i)
-                                     .arg(QString::number(unit.value(i),
-                                          unit.registerType() <= QModbusDataUnit::Coils ? 10 : 16));
-            //ui->readValue->addItem(entry);
-        }
-    } else if (reply->error() == QModbusDevice::ProtocolError) {
-        statusBar()->showMessage(tr("Read response error: %1 (Mobus exception: 0x%2)").
-                                    arg(reply->errorString()).
-                                    arg(reply->rawResult().exceptionCode(), -1, 16), 5000);
-    } else {
-        statusBar()->showMessage(tr("Read response error: %1 (code: 0x%2)").
-                                    arg(reply->errorString()).
-                                    arg(reply->error(), -1, 16), 5000);
-    }
-
-    reply->deleteLater();
-}
-
 
 void MainWindow::onSecond()
 {
-   if (modbusDevice->state() == QModbusDevice::ConnectedState)
+   if (modbusDevice)
    {
-       //qDebug() << "MainWindow::OnSecond connected";
        if (m_ConnectedState==0)
        {
            m_ConnectedState = 1;
@@ -370,8 +195,6 @@ void MainWindow::onSecond()
            onSetUint(9,1);  // ON
            statusBar()->showMessage("1A and ON");
        }
-
-
 
        onReadDPS();
        return;
@@ -397,7 +220,7 @@ QString MainWindow::getValuesAsJson()
     ret+= "\"iout\": \"" + iout + "\", ";
     ret+= "\"iset\": \"" + iset + "\", ";
     ret+= "\"pow\":  \"" + pow  + "\", ";
-    ret+= "\"ver\":  \"0.3\"\n\r";   // VERSION-TAG  float !!! only first 2 levels!
+    ret+= "\"ver\":  \"0.4\"\n\r";   // VERSION-TAG  float !!! only first 2 levels!
     ret += "}\n\r";
 
     return ret;

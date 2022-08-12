@@ -13,7 +13,7 @@ TARGET = QtDPS3005Rest
 TEMPLATE = app
 CONFIG += c++11
 
-include($$PWD/QSimpleRestServer\REST.pri)
+include($$PWD/QSimpleRestServer/REST.pri)
 
 INCLUDEPATH += 3rdparty/libmodbus \
                3rdparty/libmodbus/src

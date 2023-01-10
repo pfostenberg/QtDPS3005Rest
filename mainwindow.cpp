@@ -10,6 +10,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+#ifndef _WIN32
+    setlocale(LC_NUMERIC,"C");         // C-Standard needed for PI ., Problem in JSON printf and german PI.
+#endif
     m_Timer=nullptr;
     m_Settings = new QSettings("klosterallee.de","DPS3005");
     serverEdit = 1;
@@ -170,14 +173,14 @@ void MainWindow::onReadDPS()
 
     int ret = modbus_read_registers( modbusDevice, modbusAdr, 12, modbusData );
 
-    qDebug() << "modbus_read_registers: " << ret;
+    //qDebug() << "modbus_read_registers: " << ret;
 
     if (ret == 12)
     {
         for (int i = 0; i < ret; i++)
         {
             int data = modbusData[i];
-            qDebug() << i << "modbus_read_registers 0: " << data;
+            //qDebug() << i << "modbus_read_registers 0: " << data;
             dpsData.setValue(i+1,data);
         }
         updateData();
@@ -207,7 +210,7 @@ void MainWindow::onSecond()
 
 QString MainWindow::getValuesAsJson()
 {    
-    QString ret="{\n";
+    QString ret="{";
 
     QString  iset = dpsData.getValue(1);
     QString  vout = dpsData.getValue(2);
@@ -220,7 +223,7 @@ QString MainWindow::getValuesAsJson()
     ret+= "\"iout\": \"" + iout + "\", ";
     ret+= "\"iset\": \"" + iset + "\", ";
     ret+= "\"pow\":  \"" + pow  + "\", ";
-    ret+= "\"ver\":  \"0.4\"\n\r";   // VERSION-TAG  float !!! only first 2 levels!
+    ret+= "\"ver\":  \"1.1\"";   // VERSION-TAG  float !!! only first 2 levels!
     ret += "}\n\r";
 
     return ret;

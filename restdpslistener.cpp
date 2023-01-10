@@ -64,36 +64,47 @@ void RestDpsListener::http_get_v1STAR(RESTRequest * request)
             m_ModBus->onSetUint(0,vMalHundert);
 
             bool done=false;
-            int cnt = 0;
+            int cntms = 0;
             while(!done)
             {
-                cnt++;
-                for (int t=0;t<1000;t++)
+                cntms+=100;
+                //qDebug() << "cnt: " << cntms;
+
+                // alle 100ms
+                for (int t=0;t<10;t++)
                 {
-                QCoreApplication::processEvents();
-                QThread::msleep(1);
+                QCoreApplication::processEvents();        // keep timer happy
+                QThread::msleep(10);
                 }
-               m_ModBus->onSecond();
+               //m_ModBus->onSecond();
 
                float av = m_ModBus->getActVoltage();
                float delta = av-fv;
                qDebug() << "Delta: " << delta;
-               if(cnt > 10)
+               if(cntms > 10000)
                {
-                   qDebug() << "timeout after sec: " << cnt;
+                   qDebug() << "timeout after ms: " << cntms;
                    done = true;
                    msg = "timeout after 10 sec voltate not reached! " + v;
                }
-               if (abs(delta) < 0.2)
+               if (abs(delta) < 0.1)
                {
-                   qDebug() << "delta OK after sec: " << cnt;
+                   qDebug() << "delta OK after ms: " << cntms << " delta " << delta;
                    done = true;
                }
 
-               msg = getValesAsJson();
-               request->result()->setData( msg);
-               request->result()->setStatusCode( 200 );
-               return;
+               if (done)
+               {
+                    msg = getValesAsJson();
+                    if (cntms > 0)
+                    {
+                        QString rs = QString(", \"ms_cnt\": %1 }").arg(cntms);
+                        msg.replace("}",rs);
+                    }
+                    request->result()->setData( msg);
+                    request->result()->setStatusCode( 200 );
+                    return;
+               }
             }
             // todo readback...
         }
@@ -123,4 +134,5 @@ void RestDpsListener::http_get_v1STAR(RESTRequest * request)
   request->result()->setData( msg);
   request->result()->setStatusCode( 400 );
 }
+
 

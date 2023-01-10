@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>260</width>
-    <height>264</height>
+    <width>316</width>
+    <height>276</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>QtDPS3005Rest V0.3.0</string>
+   <string>QtDPS3005Rest V1.1.0 01/2023</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -30,6 +30,12 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>130</width>
+          <height>0</height>
+         </size>
         </property>
        </widget>
       </item>
@@ -265,7 +271,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>260</width>
+     <width>316</width>
      <height>26</height>
     </rect>
    </property>

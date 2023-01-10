@@ -43,5 +43,5 @@ FORMS += \
 RESOURCES += \
     master.qrc
 
-#target.path = $$[QT_INSTALL_EXAMPLES]/serialbus/modbus/master
+target.path = build
 INSTALLS += target
